@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>博辰 x 華碩智行：技術共振模擬</title>
+    <!-- 載入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 載入 React 與 Babel (用於即時編譯 JSX) -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- 載入 Lucide 圖標庫 -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: white;
+            border: 2px solid currentColor;
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // 定義 Icon 組件
+        const Icon = ({ name, color, size = 16, className = "" }) => {
+            const iconRef = useRef(null);
+            useEffect(() => {
+                if (window.lucide) {
+                    window.lucide.createIcons();
+                }
+            }, []);
+            return <i data-lucide={name} className={className} style={{ width: size, height: size, color: color }}></i>;
+        };
+
+        const App = () => {
+            const [freqA, setFreqA] = useState(5);
+            const [freqB, setFreqB] = useState(3);
+            const [phaseB, setPhaseB] = useState(0);
+            const canvasRef = useRef(null);
+
+            useEffect(() => {
+                const canvas = canvasRef.current;
+                const ctx = canvas.getContext('2d');
+                let animationFrameId;
+
+                const render = (time) => {
+                    const width = canvas.width;
+                    const height = canvas.height;
+                    ctx.clearRect(0, 0, width, height);
+
+                    const centerY = height / 2;
+                    const amplitude = 40;
+                    const t = time / 1000;
+
+                    // 波形 A: 博辰
+                    ctx.beginPath();
+                    ctx.strokeStyle = 'rgba(59, 130, 246, 0.7)';
+                    ctx.lineWidth = 3;
+                    for (let x = 0; x < width; x++) {
+                        const y = centerY - 100 + Math.sin((x / width) * freqA * 10 + t * 5) * amplitude;
+                        if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                    }
+                    ctx.stroke();
+
+                    // 波形 B: 華碩智行
+                    ctx.beginPath();
+                    ctx.strokeStyle = 'rgba(236, 72, 153, 0.7)';
+                    ctx.lineWidth = 3;
+                    for (let x = 0; x < width; x++) {
+                        const y = centerY + 0 + Math.sin((x / width) * freqB * 10 + t * 5 + phaseB) * amplitude;
+                        if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                    }
+                    ctx.stroke();
+
+                    // 聯合產出
+                    ctx.beginPath();
+                    ctx.strokeStyle = '#8b5cf6';
+                    ctx.lineWidth = 5;
+                    for (let x = 0; x < width; x++) {
+                        const yA = Math.sin((x / width) * freqA * 10 + t * 5) * amplitude;
+                        const yB = Math.sin((x / width) * freqB * 10 + t * 5 + phaseB) * amplitude;
+                        const y = centerY + 120 + (yA + yB);
+                        if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                    }
+                    ctx.stroke();
+
+                    // 標籤
+                    ctx.font = 'bold 16px sans-serif';
+                    ctx.fillStyle = '#1e293b';
+                    ctx.fillText("博辰：研發節奏 (Frequency A)", 10, centerY - 150);
+                    ctx.fillText("華碩智行：協作節奏 (Frequency B)", 10, centerY - 50);
+                    ctx.fillText("博辰 x 華碩智行：聯合研發產出 (Synergy)", 10, centerY + 80);
+
+                    animationFrameId = requestAnimationFrame(render);
+                };
+
+                render(0);
+                return () => cancelAnimationFrame(animationFrameId);
+            }, [freqA, freqB, phaseB]);
+
+            const isResonating = Math.abs(freqA - freqB) < 0.2;
+
+            return (
+                <div className="flex flex-col items-center p-4 md:p-8">
+                    <div className="max-w-4xl w-full bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200">
+                        <div className="bg-gradient-to-r from-blue-900 via-slate-900 to-pink-900 p-6 text-white flex justify-between items-center">
+                            <div>
+                                <h1 className="text-2xl font-bold flex items-center gap-2">
+                                    <Icon name="zap" color="#facc15" size={24} /> 博辰 x 華碩智行：技術共振模擬器
+                                </h1>
+                            </div>
+                            {isResonating && (
+                                <div className="hidden md:block bg-green-500/20 text-green-400 px-4 py-1 rounded-full border border-green-500/50 animate-pulse text-sm font-bold">
+                                    共振狀態：最佳協作
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="p-4 md:p-8 space-y-8">
+                            <div className="bg-slate-100 rounded-xl p-4 border border-slate-200 shadow-inner overflow-hidden">
+                                <canvas ref={canvasRef} width={700} height={450} className="w-full h-auto" />
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="space-y-6">
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-center text-sm font-bold">
+                                            <span className="flex items-center gap-2 text-blue-600"><Icon name="settings" size={16} /> 博辰研發頻率</span>
+                                            <span className="text-blue-600 font-mono">{freqA.toFixed(1)} Hz</span>
+                                        </div>
+                                        <input type="range" min="1" max="10" step="0.1" value={freqA} onChange={(e) => setFreqA(parseFloat(e.target.value))} className="w-full h-2 bg-blue-100 rounded-lg appearance-none cursor-pointer text-blue-600" />
+                                    </div>
+
+                                    <div className="space-y-4 border-t pt-4">
+                                        <div className="flex justify-between items-center text-sm font-bold">
+                                            <span className="flex items-center gap-2 text-pink-600"><Icon name="users" size={16} /> 華碩智行協作頻率</span>
+                                            <span className="text-pink-600 font-mono">{freqB.toFixed(1)} Hz</span>
+                                        </div>
+                                        <input type="range" min="1" max="10" step="0.1" value={freqB} onChange={(e) => setFreqB(parseFloat(e.target.value))} className="w-full h-2 bg-pink-100 rounded-lg appearance-none cursor-pointer text-pink-600" />
+                                    </div>
+
+                                    <div className="space-y-4 border-t pt-4">
+                                        <div className="flex justify-between items-center text-sm font-bold">
+                                            <span className="flex items-center gap-2 text-purple-600"><Icon name="target" size={16} /> 相位同步控制</span>
+                                            <span className="text-purple-600 font-mono">{((phaseB / (Math.PI * 2)) * 100).toFixed(0)}%</span>
+                                        </div>
+                                        <input type="range" min="0" max={Math.PI * 2} step="0.1" value={phaseB} onChange={(e) => setPhaseB(parseFloat(e.target.value))} className="w-full h-2 bg-purple-100 rounded-lg appearance-none cursor-pointer text-purple-600" />
+                                    </div>
+                                </div>
+
+                                <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                                    <h3 className="font-bold text-slate-800 mb-4 border-b pb-2">協作效能分析</h3>
+                                    <ul className="space-y-4 text-sm text-slate-600">
+                                        <li className="flex gap-3">
+                                            <div className={`w-3 h-3 rounded-full mt-1 ${Math.abs(freqA - freqB) > 2 ? 'bg-red-500' : 'bg-green-500'}`} />
+                                            <p>{Math.abs(freqA - freqB) > 2 ? "【警示】目標頻率偏移，技術整合難度高。" : "【良好】核心邏輯已趨向一致。"}</p>
+                                        </li>
+                                        <li className="flex gap-3">
+                                            <div className={`w-3 h-3 rounded-full mt-1 ${isResonating ? 'bg-green-500' : 'bg-slate-300'}`} />
+                                            <p>{isResonating ? "【共振】技術波形完美疊加，產出能量最大化。" : "【調整中】需進一步校準雙方協作節奏。"}</p>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
